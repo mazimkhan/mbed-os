@@ -1,0 +1,8 @@
+{
+    "tests": {
+        "tcp_client_echo": {
+            "unique_name": "tcp_client_echo", 
+            "summary": "tcp_client_echo"
+        }
+    }
+}

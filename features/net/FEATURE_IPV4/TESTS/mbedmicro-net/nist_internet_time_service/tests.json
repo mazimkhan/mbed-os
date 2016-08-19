@@ -1,0 +1,8 @@
+{
+    "tests": {
+        "nist_internet_time_service": {
+            "unique_name": "nist_internet_time_service", 
+            "summary": "nist_internet_time_service"
+        }
+    }
+}

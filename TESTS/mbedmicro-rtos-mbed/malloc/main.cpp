@@ -37,6 +37,7 @@ int main()
     Thread *thread_list[NUM_THREADS];
     int test_time = 15;
     GREENTEA_SETUP(20, "default_auto");
+    GREENTEA_TESTCASE_START("malloc");
 
     // Allocate threads for the test
     for (int i = 0; i < NUM_THREADS; i++) {
@@ -64,5 +65,6 @@ int main()
         delete thread_list[i];
     }
 
+    GREENTEA_TESTCASE_FINISHED("malloc", 1, 0);
     GREENTEA_TESTSUITE_RESULT(!allocation_failure);
 }

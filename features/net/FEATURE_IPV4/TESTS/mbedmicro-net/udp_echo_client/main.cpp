@@ -26,6 +26,7 @@ void prep_buffer(char *tx_buffer, size_t tx_size) {
 
 int main() {
     GREENTEA_SETUP(20, "udp_echo_client");
+    GREENTEA_TESTCASE_START("udp_echo_client");
 
     EthernetInterface eth;
     eth.connect();
@@ -70,5 +71,6 @@ int main() {
 
     sock.close();
     eth.disconnect();
+    GREENTEA_TESTCASE_FINISHED("udp_echo_client", result, !result);
     GREENTEA_TESTSUITE_RESULT(result);
 }

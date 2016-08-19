@@ -43,31 +43,35 @@ static bool check_and_free_heap(void);
 
 int main (void) {
     GREENTEA_SETUP(30, "default_auto");
+    GREENTEA_TESTCASE_START("heap_and_stack");
 
     char c;
     char * initial_stack = &c;
     char *initial_heap;
+    bool ret = true;
 
     // Sanity check malloc
     initial_heap = (char*)malloc(1);
     if (initial_heap == NULL) {
         printf("Unable to malloc a single byte\n");
-        GREENTEA_TESTSUITE_RESULT(false);
+        ret = false;
+        goto exit;
     }
 
     if (!inrange((uint32_t)initial_heap, mbed_heap_start, mbed_heap_size)) {
         printf("Heap in wrong location\n");
-        GREENTEA_TESTSUITE_RESULT(false);
+        ret = false;
+        goto exit;
     }
     // MSP stack should be very near end (test using within 128 bytes)
     uint32_t msp = __get_MSP();
     if (!inrange(msp, mbed_stack_isr_start + mbed_stack_isr_size - 128, 128)) {
         printf("Interrupt stack in wrong location\n");
-        GREENTEA_TESTSUITE_RESULT(false);
+        ret = false;
+        goto exit;
     }
 
     // Fully allocate the heap and stack
-    bool ret = true;
     ret = ret && allocate_and_fill_heap();
     ret = ret && check_and_free_heap();
 
@@ -76,6 +80,8 @@ int main (void) {
 
     printf("Total size dynamically allocated: %lu\n", max_allocation_size);
 
+exit:
+    GREENTEA_TESTCASE_FINISHED("heap_and_stack", ret, !ret);
     GREENTEA_TESTSUITE_RESULT(ret);
 }
 

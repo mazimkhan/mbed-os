@@ -16,6 +16,7 @@ namespace {
 
 int main() {
     GREENTEA_SETUP(20, "default_auto");
+    GREENTEA_TESTCASE_START("nist_internet_time_service");
 
     bool result = false;
     const time_t TIME1970 = 2208988800L;
@@ -61,5 +62,6 @@ int main() {
 
     sock.close();
     eth.disconnect();
+    GREENTEA_TESTCASE_FINISHED("nist_internet_time_service", result, !result);
     GREENTEA_TESTSUITE_RESULT(result);
 }

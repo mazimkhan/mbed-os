@@ -1,0 +1,8 @@
+{
+    "tests": {
+        "malloc": {
+            "unique_name": "malloc", 
+            "summary": "malloc"
+        }
+    }
+}

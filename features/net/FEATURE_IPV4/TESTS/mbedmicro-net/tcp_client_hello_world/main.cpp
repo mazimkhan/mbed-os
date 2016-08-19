@@ -34,6 +34,7 @@ bool find_substring(const char *first, const char *last, const char *s_first, co
 
 int main() {
     GREENTEA_SETUP(20, "default_auto");
+    GREENTEA_TESTCASE_START("tcp_client_hello_world");
 
     bool result = true;
     EthernetInterface eth;
@@ -78,5 +79,6 @@ int main() {
 
     sock.close();
     eth.disconnect();
+    GREENTEA_TESTCASE_FINISHED("tcp_client_hello_world", result, !result);
     GREENTEA_TESTSUITE_RESULT(result);
 }

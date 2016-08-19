@@ -1,0 +1,8 @@
+{
+    "tests": {
+        "udp_echo_client": {
+            "unique_name": "udp_echo_client", 
+            "summary": "udp_echo_client"
+        }
+    }
+}

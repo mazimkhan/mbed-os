@@ -1,0 +1,8 @@
+{
+    "tests": {
+        "tcp_client_hello_world": {
+            "unique_name": "tcp_client_hello_world", 
+            "summary": "tcp_client_hello_world"
+        }
+    }
+}
