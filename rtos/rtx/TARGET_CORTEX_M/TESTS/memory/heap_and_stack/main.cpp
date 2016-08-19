@@ -49,6 +49,7 @@ int main (void) {
     char * initial_stack = &c;
     char *initial_heap;
     bool ret = true;
+    uint32_t msp = 0;
 
     // Sanity check malloc
     initial_heap = (char*)malloc(1);
@@ -64,7 +65,7 @@ int main (void) {
         goto exit;
     }
     // MSP stack should be very near end (test using within 128 bytes)
-    uint32_t msp = __get_MSP();
+    msp = __get_MSP();
     if (!inrange(msp, mbed_stack_isr_start + mbed_stack_isr_size - 128, 128)) {
         printf("Interrupt stack in wrong location\n");
         ret = false;
