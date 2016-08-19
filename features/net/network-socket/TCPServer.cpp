@@ -15,7 +15,7 @@
  */
 
 #include "TCPServer.h"
-#include "Timer.h"
+#include "mbed.h"
 
 TCPServer::TCPServer()
     : _pending(0), _accept_sem(0)
@@ -47,7 +47,7 @@ int TCPServer::listen(int backlog)
     return ret;
 }
 
-int TCPServer::accept(TCPSocket *connection)
+int TCPServer::accept(TCPSocket *connection, SocketAddress *address)
 {
     _lock.lock();
     int ret;
@@ -60,7 +60,7 @@ int TCPServer::accept(TCPSocket *connection)
 
         _pending = 0;
         void *socket;
-        ret = _stack->socket_accept(&socket, _socket);
+        ret = _stack->socket_accept(_socket, &socket, address);
 
         if (0 == ret) {
             connection->_lock.lock();

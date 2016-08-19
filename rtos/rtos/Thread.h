@@ -26,6 +26,8 @@
 #include "cmsis_os.h"
 #include "Callback.h"
 #include "toolchain.h"
+#include "Semaphore.h"
+#include "Mutex.h"
 
 namespace rtos {
 
@@ -56,7 +58,7 @@ public:
         The explicit Thread::start member function should be used to spawn
         a thread.
     */
-    MBED_DEPRECATED(
+    MBED_DEPRECATED_SINCE("mbed-os-5.1",
         "Thread-spawning constructors hide errors and may lead to complex "
         "program state when a thread is declared")
     Thread(mbed::Callback<void()> task,
@@ -81,7 +83,7 @@ public:
         a thread.
     */
     template <typename T>
-    MBED_DEPRECATED(
+    MBED_DEPRECATED_SINCE("mbed-os-5.1",
         "Thread-spawning constructors hide errors and may lead to complex "
         "program state when a thread is declared")
     Thread(T *obj, void (T::*method)(),
@@ -107,7 +109,7 @@ public:
         a thread.
     */
     template <typename T>
-    MBED_DEPRECATED(
+    MBED_DEPRECATED_SINCE("mbed-os-5.1",
         "Thread-spawning constructors hide errors and may lead to complex "
         "program state when a thread is declared")
     Thread(T *obj, void (*method)(T *),
@@ -132,7 +134,7 @@ public:
         The explicit Thread::start member function should be used to spawn
         a thread.
     */
-    MBED_DEPRECATED(
+    MBED_DEPRECATED_SINCE("mbed-os-5.1",
         "Thread-spawning constructors hide errors and may lead to complex "
         "program state when a thread is declared")
     Thread(void (*task)(void const *argument), void *argument=NULL,
@@ -205,6 +207,9 @@ public:
         WaitingSemaphore,   /**< Waiting for a semaphore event to occur */
         WaitingMailbox,     /**< Waiting for a mailbox event to occur */
         WaitingMutex,       /**< Waiting for a mutex event to occur */
+
+        /* Not in sync with RTX below here */
+        Deleted,            /**< The task has been deleted */
     };
 
     /** State of this Thread
@@ -275,11 +280,14 @@ private:
                      osPriority priority=osPriorityNormal,
                      uint32_t stack_size=DEFAULT_STACK_SIZE,
                      unsigned char *stack_pointer=NULL);
+    static void _thunk(const void * thread_ptr);
 
     mbed::Callback<void()> _task;
     osThreadId _tid;
     osThreadDef_t _thread_def;
     bool _dynamic_stack;
+    Semaphore _join_sem;
+    Mutex _mutex;
 };
 
 }

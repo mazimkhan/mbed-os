@@ -58,6 +58,7 @@ class GccArm(Exporter):
         'ARCH_PRO',
         'NRF51822',
         'HRM1017',
+        'TY51822R3',
         'RBLAB_NRF51822',
         'RBLAB_BLENANO',
         'LPC2368',
@@ -161,10 +162,11 @@ class GccArm(Exporter):
             'libraries': libraries,
             'symbols': self.get_symbols(),
             'cpu_flags': self.toolchain.cpu,
-            'vpath': [relpath(s, build_dir) for s in self.prj_paths] if self.sources_relative else [".."]
+            'vpath': [relpath(s, build_dir) for s in self.prj_paths] if self.sources_relative else [".."],
+            'hex_files': self.resources.hex_files
         }
 
-        for key in ['include_paths', 'library_paths', 'linker_script']:
+        for key in ['include_paths', 'library_paths', 'linker_script', 'hex_files']:
             if isinstance(ctx[key], list):
                 ctx[key] = [ctx['vpath'][0] + "/" + t for t in ctx[key]]
             else:

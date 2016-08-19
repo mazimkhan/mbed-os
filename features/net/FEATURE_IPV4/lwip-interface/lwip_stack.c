@@ -28,6 +28,7 @@
 #include "lwip/dhcp.h"
 #include "lwip/tcpip.h"
 #include "lwip/tcp.h"
+#include "lwip/ip.h"
 
 
 /* Static arena of sockets */
@@ -144,33 +145,32 @@ const char *lwip_get_ip_address(void)
 int lwip_bringup(void)
 {
     // Check if we've already connected
-    if (lwip_get_mac_address()) {
-        return 0;
+    if (!lwip_get_mac_address()) {
+        // Set up network
+        lwip_set_mac_address();
+
+        sys_sem_new(&lwip_tcpip_inited, 0);
+        sys_sem_new(&lwip_netif_linked, 0);
+        sys_sem_new(&lwip_netif_up, 0);
+
+        tcpip_init(lwip_tcpip_init_irq, NULL);
+        sys_arch_sem_wait(&lwip_tcpip_inited, 0);
+
+        memset(&lwip_netif, 0, sizeof lwip_netif);
+        netif_add(&lwip_netif, 0, 0, 0, NULL, eth_arch_enetif_init, tcpip_input);
+        netif_set_default(&lwip_netif);
+
+        netif_set_link_callback  (&lwip_netif, lwip_netif_link_irq);
+        netif_set_status_callback(&lwip_netif, lwip_netif_status_irq);
+
+        eth_arch_enable_interrupts();
     }
-
-    // Set up network
-    lwip_set_mac_address();
-
-    sys_sem_new(&lwip_tcpip_inited, 0);
-    sys_sem_new(&lwip_netif_linked, 0);
-    sys_sem_new(&lwip_netif_up, 0);
-
-    tcpip_init(lwip_tcpip_init_irq, NULL);
-    sys_arch_sem_wait(&lwip_tcpip_inited, 0);
-
-    memset(&lwip_netif, 0, sizeof lwip_netif);
-    netif_add(&lwip_netif, 0, 0, 0, NULL, eth_arch_enetif_init, tcpip_input);
-    netif_set_default(&lwip_netif);
-
-    netif_set_link_callback  (&lwip_netif, lwip_netif_link_irq);
-    netif_set_status_callback(&lwip_netif, lwip_netif_status_irq);
-
-    // Connect to network
-    eth_arch_enable_interrupts();
-    dhcp_start(&lwip_netif);
 
     // Zero out socket set
     lwip_arena_init();
+
+    // Connect to the network
+    dhcp_start(&lwip_netif);
 
     // Wait for an IP Address
     u32_t ret = sys_arch_sem_wait(&lwip_netif_up, 15000);
@@ -183,12 +183,10 @@ int lwip_bringup(void)
 
 void lwip_bringdown(void)
 {
+    // Disconnect from the network
     dhcp_release(&lwip_netif);
     dhcp_stop(&lwip_netif);
-
-    eth_arch_disable_interrupts();
     lwip_ip_addr[0] = '\0';
-    lwip_mac_addr[0] = '\0';
 }
 
 
@@ -295,7 +293,7 @@ static int lwip_socket_connect(nsapi_stack_t *stack, nsapi_socket_t handle, nsap
     return lwip_err_remap(err);
 }
 
-static int lwip_socket_accept(nsapi_stack_t *stack, nsapi_socket_t *handle, nsapi_socket_t server)
+static int lwip_socket_accept(nsapi_stack_t *stack, nsapi_socket_t server, nsapi_socket_t *handle, nsapi_addr_t *addr, uint16_t *port)
 {
     struct lwip_socket *s = (struct lwip_socket *)server;
     struct lwip_socket *ns = lwip_arena_alloc();
@@ -307,6 +305,10 @@ static int lwip_socket_accept(nsapi_stack_t *stack, nsapi_socket_t *handle, nsap
     }
 
     *(struct lwip_socket **)handle = ns;
+
+    (void) netconn_peer(ns->conn, (ip_addr_t *)addr->bytes, port);
+    addr->version = NSAPI_IPv4;
+
     return 0;
 }
 
@@ -416,6 +418,18 @@ static int lwip_setsockopt(nsapi_stack_t *stack, nsapi_socket_t handle, int leve
             }
 
             s->conn->pcb.tcp->keep_intvl = *(int*)optval;
+            return 0;
+
+        case NSAPI_REUSEADDR:
+            if (optlen != sizeof(int)) {
+                return NSAPI_ERROR_UNSUPPORTED;
+            }
+
+            if (*(int *)optval) {
+                s->conn->pcb.tcp->so_options |= SOF_REUSEADDR;
+            } else {
+                s->conn->pcb.tcp->so_options &= ~SOF_REUSEADDR;
+            }
             return 0;
 
         default:
