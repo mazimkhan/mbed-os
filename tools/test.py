@@ -177,7 +177,8 @@ if __name__ == '__main__':
                                                 macros=options.macros,
                                                 verbose=options.verbose,
                                                 notify=notify,
-                                                archive=False)
+                                                archive=False,
+                                                coverage_filter=options.coverage_filter)
 
                 library_build_success = True
             except ToolException, e:
@@ -203,7 +204,8 @@ if __name__ == '__main__':
                         verbose=options.verbose,
                         notify=notify,
                         jobs=options.jobs,
-                        continue_on_build_fail=options.continue_on_build_fail)
+                        continue_on_build_fail=options.continue_on_build_fail,
+                        coverage_filter=options.coverage_filter)
 
                 # If a path to a test spec is provided, write it to a file
                 if options.test_spec:

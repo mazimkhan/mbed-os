@@ -77,5 +77,7 @@ def get_default_options_parser(add_clean=True, add_options=True):
                                                                  'debug-info',
                                                                  'analyze'],
                                                                 "build option"))
+    parser.add_argument("--coverage-filter", default=None, dest="coverage_filter",
+                        help="Enable coverage on path that contains filter expression.")
 
     return parser

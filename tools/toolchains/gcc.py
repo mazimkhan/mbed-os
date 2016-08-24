@@ -42,7 +42,12 @@ class GCC(mbedToolchain):
             "-Wl,--wrap,_malloc_r", "-Wl,--wrap,_free_r", "-Wl,--wrap,_realloc_r", "-Wl,--wrap,_calloc_r"],
     }
 
-    def __init__(self, target, options=None, notify=None, macros=None, silent=False, tool_path="", extra_verbose=False):
+    COVERAGE_COMPILE_FLAGS = ["-fprofile-arcs", "-ftest-coverage", "-fprofile-dir=."]
+    COVERAGE_LINK_FLAGS = ["-fprofile-arcs", "-ftest-coverage", "-fprofile-dir=."]
+    COVERAGE_MACRO = 'MBED_CFG_DEBUG_OPTIONS_COVERAGE'
+
+    def __init__(self, target, options=None, notify=None, macros=None, silent=False, tool_path="", extra_verbose=False,
+                 coverage_filter=None):
         mbedToolchain.__init__(self, target, options, notify, macros, silent, extra_verbose=extra_verbose)
 
         if target.core == "Cortex-M0+":
@@ -71,8 +76,6 @@ class GCC(mbedToolchain):
             self.cpu.append("-mfpu=fpv5-d16")
             self.cpu.append("-mfloat-abi=softfp")
 
-
-
         if target.core == "Cortex-A9":
             self.cpu.append("-mthumb-interwork")
             self.cpu.append("-marm")
@@ -81,6 +84,9 @@ class GCC(mbedToolchain):
             self.cpu.append("-mfloat-abi=hard")
             self.cpu.append("-mno-unaligned-access")
 
+        self.coverage_filter = coverage_filter
+        if self.coverage_filter:
+            self.macros.append(self.COVERAGE_MACRO)
 
         # Note: We are using "-O2" instead of "-Os" to avoid this known GCC bug:
         # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=46762
@@ -186,7 +192,10 @@ class GCC(mbedToolchain):
     @hook_tool
     def assemble(self, source, object, includes):
         # Build assemble command
-        cmd = self.asm + self.get_compile_options(self.get_symbols(True), includes) + ["-o", object, source]
+        if self.coverage_filter and re.search(self.coverage_filter, source):
+            cmd = self.asm + self.COVERAGE_COMPILE_FLAGS + self.get_compile_options(self.get_symbols(True), includes) + ["-o", object, source]
+        else:
+            cmd = self.asm + self.get_compile_options(self.get_symbols(True), includes) + ["-o", object, source]
 
         # Call cmdline hook
         cmd = self.hook.get_cmdline_assembler(cmd)
@@ -197,7 +206,10 @@ class GCC(mbedToolchain):
     @hook_tool
     def compile(self, cc, source, object, includes):
         # Build compile command
-        cmd = cc + self.get_compile_options(self.get_symbols(), includes)
+        if self.coverage_filter and re.search(self.coverage_filter, source):
+            cmd = cc + self.COVERAGE_COMPILE_FLAGS + self.get_compile_options(self.get_symbols(), includes)
+        else:
+            cmd = cc + self.get_compile_options(self.get_symbols(), includes)
 
         cmd.extend(self.get_dep_option(object))
 
@@ -224,7 +236,11 @@ class GCC(mbedToolchain):
 
         # Build linker command
         map_file = splitext(output)[0] + ".map"
-        cmd = self.ld + ["-o", output, "-Wl,-Map=%s" % map_file] + objects + ["-Wl,--start-group"] + libs + ["-Wl,--end-group"]
+
+        if self.coverage_filter:
+            cmd = self.ld + self.COVERAGE_LINK_FLAGS + ["-o", output, "-Wl,-Map=%s" % map_file] + objects + ["-Wl,--start-group"] + libs + ["-Wl,--end-group"]
+        else:
+            cmd = self.ld + ["-o", output, "-Wl,-Map=%s" % map_file] + objects + ["-Wl,--start-group"] + libs + ["-Wl,--end-group"]
         if mem_map:
             cmd.extend(['-T', mem_map])
 
@@ -269,8 +285,10 @@ class GCC(mbedToolchain):
 
 
 class GCC_ARM(GCC):
-    def __init__(self, target, options=None, notify=None, macros=None, silent=False, extra_verbose=False):
-        GCC.__init__(self, target, options, notify, macros, silent, TOOLCHAIN_PATHS['GCC_ARM'], extra_verbose=extra_verbose)
+    def __init__(self, target, options=None, notify=None, macros=None, silent=False, extra_verbose=False,
+                 coverage_filter=None):
+        GCC.__init__(self, target, options, notify, macros, silent, TOOLCHAIN_PATHS['GCC_ARM'],
+                     extra_verbose=extra_verbose, coverage_filter=coverage_filter)
 
         # Use latest gcc nanolib
         if "big-build" in self.options:
