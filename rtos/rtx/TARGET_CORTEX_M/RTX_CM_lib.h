@@ -354,7 +354,7 @@ extern void pre_main (void);
 #if defined(TARGET_MCU_NRF51822) || defined(TARGET_MCU_NRF52832)
 static uint32_t thread_stack_main[DEFAULT_STACK_SIZE / sizeof(uint32_t)];
 #else
-static uint32_t thread_stack_main[DEFAULT_STACK_SIZE * 2 / sizeof(uint32_t)];
+static uint32_t thread_stack_main[16 * 1024];
 #endif
 osThreadDef_t os_thread_def_main = {(os_pthread)pre_main, osPriorityNormal, 1U, sizeof(thread_stack_main), thread_stack_main};
 
