@@ -154,6 +154,7 @@ void SystemInit(void)
     #endif
 
     SystemCoreClockUpdate();
+    NRF_CRYPTOCELL->ENABLE = 1;
 }
 
 
