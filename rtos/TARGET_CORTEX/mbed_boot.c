@@ -418,6 +418,11 @@ void __rt_entry (void) {
 #if !(defined(FEATURE_UVISOR) && defined(TARGET_UVISOR_SUPPORTED))
     mbed_cpy_nvic();
 #endif
+#if DEVICE_CRYPTOCELL
+    if (SaSi_LibInit(&rndState,&rndWorkBuff)) {
+        mbed_die();
+    }
+#endif
     mbed_sdk_init();
     _platform_post_stackheap_init();
     mbed_start_main();
@@ -562,6 +567,11 @@ void software_init_hook(void)
     /* Copy the vector table to RAM only if uVisor is not in use. */
 #if !(defined(FEATURE_UVISOR) && defined(TARGET_UVISOR_SUPPORTED))
     mbed_cpy_nvic();
+#endif
+#if DEVICE_CRYPTOCELL
+    if (SaSi_LibInit(&rndState,&rndWorkBuff)) {
+        mbed_die();
+    }
 #endif
     mbed_sdk_init();
     osKernelInitialize();
