@@ -169,6 +169,9 @@
 #include "mbed_toolchain.h"
 #include "mbed_error.h"
 #include "mbed_critical.h"
+#if DEVICE_CRYPTOCELL
+#include "sns_silib.h"
+#endif
 #if defined(__IAR_SYSTEMS_ICC__ ) && (__VER__ >= 8000000)
 #include <DLib_Threads.h>
 #endif
@@ -328,6 +331,16 @@ void mbed_start_main(void)
 
     osKernelStart();
 }
+
+#if DEVICE_CRYPTOCELL
+#if defined(TOOLCHAIN_GCC)
+CRYS_RND_State_t   rndState = {0};
+CRYS_RND_WorkBuff_t  rndWorkBuff = {0};
+#else
+CRYS_RND_State_t   rndState;
+CRYS_RND_WorkBuff_t  rndWorkBuff;
+#endif
+#endif
 
 /******************** Toolchain specific code ********************/
 
