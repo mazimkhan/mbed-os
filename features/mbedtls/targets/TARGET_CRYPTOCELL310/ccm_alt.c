@@ -25,7 +25,8 @@
 
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = (unsigned char*)v; while( n-- ) *p++ = 0;
+    volatile unsigned char *p = (unsigned char*)v;
+    while( n-- ) *p++ = 0;
 }
 
 #define CCM_ENCRYPT 0
@@ -91,13 +92,7 @@ static int mbedtls_ccm_setkey_sw( mbedtls_ccm_sw_context *ctx,
     if( ( ret = mbedtls_cipher_setup( &ctx->cipher_ctx, cipher_info ) ) != 0 )
         return( ret );
 
-    if( ( ret = mbedtls_cipher_setkey( &ctx->cipher_ctx, key, keybits,
-                               MBEDTLS_ENCRYPT ) ) != 0 )
-    {
-        return( ret );
-    }
-
-    return( 0 );
+    return mbedtls_cipher_setkey( &ctx->cipher_ctx, key, keybits, MBEDTLS_ENCRYPT );
 }
 
 int mbedtls_ccm_setkey( mbedtls_ccm_context *ctx,
@@ -105,14 +100,14 @@ int mbedtls_ccm_setkey( mbedtls_ccm_context *ctx,
                         const unsigned char *key,
                         unsigned int keybits )
 {
-    if ( ctx == NULL )
+    if( ctx == NULL )
         return MBEDTLS_ERR_CCM_BAD_INPUT;
 
-    if ( cipher != MBEDTLS_CIPHER_ID_AES ||
+    if( cipher != MBEDTLS_CIPHER_ID_AES ||
          keybits != 128 )
     {
         ctx->is_sw = 1;
-        return mbedtls_ccm_setkey_sw(  &ctx->u_ctx.ccm_sw_ctx, cipher, key, keybits );
+        return mbedtls_ccm_setkey_sw( &ctx->u_ctx.ccm_sw_ctx, cipher, key, keybits );
     }
 
     ctx->is_sw = 0;
@@ -293,19 +288,6 @@ static int ccm_auth_crypt_sw( mbedtls_ccm_sw_context *ctx, int mode, size_t leng
     return( 0 );
 }
 
-/*
- * Authenticated encryption
- */
-static int mbedtls_ccm_encrypt_and_tag_sw( mbedtls_ccm_sw_context *ctx, size_t length,
-                         const unsigned char *iv, size_t iv_len,
-                         const unsigned char *add, size_t add_len,
-                         const unsigned char *input, unsigned char *output,
-                         unsigned char *tag, size_t tag_len )
-{
-    return( ccm_auth_crypt_sw( ctx, CCM_ENCRYPT, length, iv, iv_len,
-                                    add, add_len, input, output, tag, tag_len ) );
-}
-
 int mbedtls_ccm_encrypt_and_tag( mbedtls_ccm_context *ctx, size_t length,
                          const unsigned char *iv, size_t iv_len,
                          const unsigned char *add, size_t add_len,
@@ -313,15 +295,13 @@ int mbedtls_ccm_encrypt_and_tag( mbedtls_ccm_context *ctx, size_t length,
                          unsigned char *tag, size_t tag_len )
 
 {
-    if(  ctx->is_sw )
-        return( mbedtls_ccm_encrypt_and_tag_sw( &ctx->u_ctx.ccm_sw_ctx, length, iv, iv_len,
+    if( ctx->is_sw )
+        return( ccm_auth_crypt_sw( &ctx->u_ctx.ccm_sw_ctx, CCM_ENCRYPT,  length, iv, iv_len,
                                                      add, add_len, input, output,
                                                      tag, tag_len ) );
 
     return CRYS_AESCCM( SASI_AES_ENCRYPT, ctx->u_ctx.ccm_alt_ctx.cipher_key, ctx->u_ctx.ccm_alt_ctx.keySize_ID,
                (uint8_t*)iv, iv_len,  (uint8_t*)add, add_len,  (uint8_t*)input, length, output, tag_len, tag );
-
-
 }
 
 /*

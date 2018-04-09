@@ -44,7 +44,7 @@ typedef struct {
     {
         mbedtls_ccm_alt_context_t ccm_alt_ctx;
         mbedtls_ccm_sw_context ccm_sw_ctx;
-    }u_ctx;
+    } u_ctx;
     unsigned int    is_sw;
 }
 mbedtls_ccm_context;
